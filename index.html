@@ -125,10 +125,16 @@ for (const a in asigFechas) {
   ultimaClase[a] = fechas[fechas.length - 1]; 
 }
 
-function calcularViaje(fecha, dia, asig, modal) {
+function calcularViaje(fecha, dia, asig, modal, viajaVal) {
   const m = modal.toUpperCase();
   const esViernes = dia === "viernes";
   const esUltima = fecha === ultimaClase[asig];
+  
+  // REGLA MAESTRA: Lo que tú escribas en el Excel manda.
+  if (viajaVal === "NO VIAJA") return { viaja: false, tipo: m.toLowerCase() };
+  if (viajaVal === "VIAJA") return { viaja: true, tipo: m.toLowerCase(), alerta: esViernes ? "⚠️ PEDIR DÍA ADMINISTRATIVO + ALOJAMIENTO" : "Gestionar pasaje" };
+
+  // Reglas automáticas por si la celda queda en blanco
   if (["FESTIVO","SUSPENSIÓN"].includes(m)) return { viaja:false, tipo:"noaplica" };
   if (m === "ONLINE")   return { viaja:false, tipo:"online" };
   if (m === "HIBRIDO")  return esUltima
@@ -140,8 +146,9 @@ function calcularViaje(fecha, dia, asig, modal) {
 }
 
 const clasesPorFecha = {};
-RAW.forEach(([f,dia,asig,modal,notas]) => {
-  clasesPorFecha[f] = { dia, asig, modal:modal.toUpperCase(), notas, ...calcularViaje(f,dia,asig,modal) };
+// Ahora extraemos las 6 columnas completas (agregando viajaVal)
+RAW.forEach(([f,dia,asig,modal,viajaVal,notas]) => {
+  clasesPorFecha[f] = { dia, asig, modal:modal.toUpperCase(), notas, ...calcularViaje(f,dia,asig,modal,viajaVal) };
 });
 
 const BIMESTRES = [
