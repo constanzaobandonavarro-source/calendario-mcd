@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario MCD — Viajes 2026-2027</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117; --surface: #181c27; --surface2: #1e2436;
+    --border: #2a3045; --text: #e8eaf0; --text-muted: #6b7390; --text-dim: #3d4460;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 24px 16px 60px; }
+
+  header { max-width: 1200px; margin: 0 auto 24px; }
+  header h1 { font-size: clamp(1rem,2.5vw,1.5rem); font-weight:700; letter-spacing:-0.02em; }
+  header p { font-size:0.78rem; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:4px; }
+
+  .stats-bar { max-width:1200px; margin:0 auto 28px; display:flex; flex-wrap:wrap; gap:8px; }
+  .stat-pill { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:5px 14px; font-size:0.75rem; display:flex; align-items:center; gap:6px; }
+  .stat-num { font-family:'DM Mono',monospace; font-size:0.9rem; font-weight:700; }
+  .stat-label { color:var(--text-muted); }
+
+  .bimestre-block { max-width:1200px; margin:0 auto 36px; }
+  .bimestre-label { font-size:0.62rem; font-family:'DM Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.1em; padding-left:8px; border-left:2px solid var(--border); margin-bottom:12px; }
+
+  .bimestre-row { display:flex; gap:16px; align-items:flex-start; }
+  .months-wrap { display:flex; flex-wrap:wrap; gap:16px; flex:1; }
+
+  /* Leyenda lateral */
+  .asig-legend-side { width:180px; flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 12px; }
+  .asig-legend-side h4 { font-size:0.6rem; font-family:'DM Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+  .asig-legend-side .asig-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; font-size:0.7rem; color:var(--text-muted); line-height:1.3; }
+  .asig-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+  /* Modalidad legend */
+  .modal-legend { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+  .modal-legend h4 { font-size:0.6rem; font-family:'DM Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+  .modal-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:0.68rem; color:var(--text-muted); }
+  .shape-s { width:14px; height:14px; background:#888; flex-shrink:0; }
+  .shape-s.circle { border-radius:50%; }
+  .shape-s.square { border-radius:2px; }
+  .shape-s.diamond { border-radius:2px; transform:rotate(45deg); width:11px; height:11px; }
+
+  /* Viaja dot legend */
+  .viaja-legend { margin-top:10px; display:flex; align-items:center; gap:7px; font-size:0.67rem; color:var(--text-muted); }
+
+  /* Month card */
+  .month-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; min-width:200px; }
+  .month-header { padding:10px 14px 8px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .month-name { font-size:0.82rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; }
+  .month-year { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--text-muted); }
+  .day-headers { display:grid; grid-template-columns:repeat(7,1fr); padding:6px 10px 2px; }
+  .day-header { text-align:center; font-size:0.58rem; font-family:'DM Mono',monospace; color:var(--text-dim); letter-spacing:0.05em; text-transform:uppercase; }
+  .days-grid { display:grid; grid-template-columns:repeat(7,1fr); padding:3px 10px 10px; gap:2px; }
+
+  .day-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; position:relative; font-size:0.68rem; font-family:'DM Mono',monospace; color:var(--text-dim); }
+  .day-cell.has-class { cursor:pointer; }
+
+  .class-marker { position:absolute; inset:1px; display:flex; align-items:center; justify-content:center; font-size:0.66rem; font-weight:600; color:#fff; font-family:'DM Mono',monospace; transition:transform 0.15s, filter 0.15s; }
+  .class-marker:hover { transform:scale(1.18); filter:brightness(1.25); z-index:10; }
+
+  /* Círculo → online */
+  .class-marker.online { border-radius:50%; }
+  /* Cuadrado → presencial */
+  .class-marker.presencial { border-radius:3px; }
+  /* Rombo → híbrido */
+  .class-marker.hibrido {
+    border-radius:3px;
+    transform:rotate(45deg);
+    width:60%; height:60%;
+    inset:auto;
+  }
+  .class-marker.hibrido:hover { transform:rotate(45deg) scale(1.18); }
+  .class-marker.hibrido span { transform:rotate(-45deg); display:block; font-size:0.58rem; }
+
+  .class-marker.festivo { border-radius:50%; opacity:0.35; }
+
+  .viaja-dot { position:absolute; bottom:1px; right:1px; width:4px; height:4px; border-radius:50%; background:#fff; opacity:0.85; }
+
+  /* Tooltip */
+  .tooltip { display:none; position:fixed; background:#1a2035; border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.75rem; line-height:1.6; max-width:230px; z-index:1000; pointer-events:none; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+  .tooltip.visible { display:block; }
+  .tooltip-date { font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--text-muted); margin-bottom:3px; }
+  .tooltip-asig { font-weight:600; margin-bottom:2px; }
+  .tooltip-viaja { display:inline-block; margin-top:4px; padding:2px 7px; border-radius:10px; font-size:0.63rem; font-weight:600; font-family:'DM Mono',monospace; }
+  .tooltip-alert { font-size:0.67rem; color:#f0a04f; margin-top:4px; }
+
+  @media(max-width:700px) {
+    .bimestre-row { flex-direction:column; }
+    .asig-legend-side { width:100%; }
+    .months-wrap { gap:12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Magíster en Ciencias del Diseño — Calendario de Viajes</h1>
+  <p>Puerto Montt ↔ Santiago · 2026–2027</p>
+</header>
+
+<div class="stats-bar" id="statsBar"></div>
+<div id="calendarRoot"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script src="datos.js"></script>
+<script>
+// datos.js se carga externamente desde GitHub
+// (ver script de Apps Script)────────
+
+const asigFechas = {};
+RAW.forEach(([f,,a,m]) => {
+  if (!["FESTIVO","SUSPENSIÓN"].includes(m)) {
+    if (!asigFechas[a]) asigFechas[a] = [];
+    asigFechas[a].push(f);
+  }
+});
+const ultimaClase = {};
+for (const a in asigFechas) ultimaClase[a] = asigFechas[a].sort().at(-1);
+
+function calcularViaje(fecha, dia, asig, modal) {
+  const m = modal.toUpperCase();
+  const esViernes = dia === "viernes";
+  const esUltima = fecha === ultimaClase[asig];
+  if (["FESTIVO","SUSPENSIÓN"].includes(m)) return { viaja:false, tipo:"noaplica" };
+  if (m === "ONLINE")   return { viaja:false, tipo:"online" };
+  if (m === "HIBRIDO")  return esUltima
+    ? { viaja:true,  tipo:"hibrido", alerta: esViernes ? "Gestionar pasaje + DÍA ADMIN":"Gestionar pasaje" }
+    : { viaja:false, tipo:"hibrido" };
+  if (m === "PRESENCIAL") return { viaja:true, tipo:"presencial",
+    alerta: esViernes ? "⚠️ PEDIR DÍA ADMINISTRATIVO + ALOJAMIENTO":"" };
+  return { viaja:false, tipo:"" };
+}
+
+const clasesPorFecha = {};
+RAW.forEach(([f,dia,asig,modal,notas]) => {
+  clasesPorFecha[f] = { dia, asig, modal:modal.toUpperCase(), notas, ...calcularViaje(f,dia,asig,modal) };
+});
+
+const BIMESTRES = [
+  { label:"4° Bimestre — Mayo / Julio 2026",       meses:[[2026,5],[2026,6],[2026,7]] },
+  { label:"5° Bimestre — Agosto / Octubre 2026",   meses:[[2026,8],[2026,9],[2026,10]] },
+  { label:"6° Bimestre — Octubre / Diciembre 2026",meses:[[2026,10],[2026,11],[2026,12]] },
+  { label:"Actividad de Grado — 2027",             meses:[[2027,3],[2027,4],[2027,5]] },
+];
+
+const MESES_ES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const pad = n => String(n).padStart(2,"0");
+
+function buildMonth(year, month) {
+  const firstDay = new Date(year, month-1, 1).getDay();
+  const totalDays = new Date(year, month, 0).getDate();
+  const startOffset = (firstDay + 6) % 7;
+
+  const card = document.createElement("div");
+  card.className = "month-card";
+  card.innerHTML = `<div class="month-header"><span class="month-name">${MESES_ES[month]}</span><span class="month-year">${year}</span></div>
+    <div class="day-headers">${["L","M","X","J","V","S","D"].map(d=>`<div class="day-header">${d}</div>`).join("")}</div>`;
+
+  const grid = document.createElement("div");
+  grid.className = "days-grid";
+
+  for (let i=0;i<startOffset;i++) {
+    const e = document.createElement("div"); e.className="day-cell empty"; grid.appendChild(e);
+  }
+  for (let d=1;d<=totalDays;d++) {
+    const cell = document.createElement("div");
+    const f = `${year}-${pad(month)}-${pad(d)}`;
+    const clase = clasesPorFecha[f];
+    if (clase) {
+      cell.className = "day-cell has-class";
+      const asigInfo = ASIGNATURAS[clase.asig] || {color:"#888",short:"?"};
+      const shapeClass = {PRESENCIAL:"presencial",HIBRIDO:"hibrido",ONLINE:"online",FESTIVO:"festivo",SUSPENSIÓN:"festivo"}[clase.modal] || "online";
+      const marker = document.createElement("div");
+      marker.className = `class-marker ${shapeClass}`;
+      marker.style.background = ["festivo"].includes(shapeClass) ? "#444" : asigInfo.color+"bb";
+      if (shapeClass === "hibrido") {
+        marker.innerHTML = `<span>${d}</span>`;
+        marker.style.background = asigInfo.color+"bb";
+      } else {
+        marker.textContent = d;
+      }
+      cell.appendChild(marker);
+      if (clase.viaja) { const dot=document.createElement("div"); dot.className="viaja-dot"; cell.appendChild(dot); }
+      cell.addEventListener("mouseenter", e=>showTip(e,f,clase,asigInfo));
+      cell.addEventListener("mousemove",  moveTooltip);
+      cell.addEventListener("mouseleave", hideTip);
+      cell.addEventListener("touchstart", e=>{e.preventDefault();showTip(e.touches[0],f,clase,asigInfo);},{passive:false});
+      cell.addEventListener("touchend",   hideTip);
+    } else {
+      cell.className="day-cell"; cell.textContent=d;
+    }
+    grid.appendChild(cell);
+  }
+  card.appendChild(grid);
+  return card;
+}
+
+function buildLegend(bimAsigs) {
+  const div = document.createElement("div");
+  div.className = "asig-legend-side";
+  div.innerHTML = `<h4>Asignatura</h4>`;
+  bimAsigs.forEach(a => {
+    const info = ASIGNATURAS[a]||{color:"#888"};
+    const row = document.createElement("div");
+    row.className = "asig-row";
+    row.innerHTML = `<div class="asig-dot" style="background:${info.color}"></div>${a.charAt(0)+a.slice(1).toLowerCase()}`;
+    div.appendChild(row);
+  });
+  div.innerHTML += `<div class="modal-legend">
+    <h4>Modalidad</h4>
+    <div class="modal-row"><div class="shape-s circle" style="background:#888"></div>Online</div>
+    <div class="modal-row"><div class="shape-s square" style="background:#888"></div>Presencial</div>
+    <div class="modal-row"><div class="shape-s diamond" style="background:#888"></div>Híbrido</div>
+  </div>
+  <div class="viaja-legend"><div style="width:7px;height:7px;border-radius:50%;background:#fff;opacity:.8;flex-shrink:0"></div>Viaja a Stgo</div>`;
+  return div;
+}
+
+const tooltip = document.getElementById("tooltip");
+function showTip(e, fecha, clase, asigInfo) {
+  const labels = {ONLINE:"Online",PRESENCIAL:"Presencial",HIBRIDO:"Híbrido",FESTIVO:"Festivo",SUSPENSIÓN:"Suspensión"};
+  const viajaHtml = clase.viaja
+    ? `<span class="tooltip-viaja" style="background:${asigInfo.color}33;color:${asigInfo.color}">✈ VIAJA</span>`
+    : clase.tipo==="noaplica"
+      ? `<span class="tooltip-viaja" style="background:#333;color:#666">— NO APLICA</span>`
+      : `<span class="tooltip-viaja" style="background:#1a2e1f;color:#4fc993">✓ NO VIAJA</span>`;
+  tooltip.innerHTML = `
+    <div class="tooltip-date">${fecha} · ${clase.dia.toUpperCase()}</div>
+    <div class="tooltip-asig" style="color:${asigInfo.color}">${clase.asig}</div>
+    <div style="font-size:0.7rem;color:var(--text-muted)">${labels[clase.modal]||clase.modal}</div>
+    ${viajaHtml}
+    ${clase.alerta?`<div class="tooltip-alert">${clase.alerta}</div>`:""}
+    ${clase.notas?`<div style="font-size:0.63rem;color:#6b7390;margin-top:4px">${clase.notas}</div>`:""}`;
+  tooltip.classList.add("visible");
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  tooltip.style.left = Math.min(e.clientX+14, window.innerWidth-245)+"px";
+  tooltip.style.top  = Math.min(e.clientY+14, window.innerHeight-170)+"px";
+}
+function hideTip() { tooltip.classList.remove("visible"); }
+
+// Render
+const root = document.getElementById("calendarRoot");
+BIMESTRES.forEach(bim => {
+  const block = document.createElement("div");
+  block.className = "bimestre-block";
+  const lbl = document.createElement("div");
+  lbl.className = "bimestre-label"; lbl.textContent = bim.label;
+  block.appendChild(lbl);
+
+  const row = document.createElement("div");
+  row.className = "bimestre-row";
+
+  const wrap = document.createElement("div");
+  wrap.className = "months-wrap";
+  const seen = new Set();
+  // Asignaturas de este bimestre
+  const bimAsigs = [...new Set(RAW
+    .filter(([f]) => bim.meses.some(([y,m])=>f.startsWith(`${y}-${pad(m)}`)))
+    .map(([,,a])=>a))];
+
+  bim.meses.forEach(([y,m]) => {
+    const k=`${y}-${m}`;
+    if(!seen.has(k)){ seen.add(k); wrap.appendChild(buildMonth(y,m)); }
+  });
+  row.appendChild(wrap);
+  row.appendChild(buildLegend(bimAsigs));
+  block.appendChild(row);
+  root.appendChild(block);
+});
+
+// Stats
+const totalViajes = RAW.filter(([f,d,a,m])=>calcularViaje(f,d,a,m).viaja).length;
+const viernes = RAW.filter(([f,d,a,m])=>calcularViaje(f,d,a,m).viaja&&d==="viernes").length;
+const sabados = RAW.filter(([f,d,a,m])=>calcularViaje(f,d,a,m).viaja&&d==="sábado").length;
+const aloj = RAW.filter(([f,d,a,m])=>calcularViaje(f,d,a,m).viaja&&d==="viernes"&&m==="PRESENCIAL").length;
+const statsBar = document.getElementById("statsBar");
+[["✈️",totalViajes,"pasajes a comprar"],["📅",viernes,"viernes (permiso)"],["🗓",sabados,"sábados"],["🏨",aloj,"noches alojamiento"]]
+  .forEach(([icon,num,label])=>{
+    const p=document.createElement("div"); p.className="stat-pill";
+    p.innerHTML=`<span>${icon}</span><span class="stat-num">${num}</span><span class="stat-label">${label}</span>`;
+    statsBar.appendChild(p);
+  });
+</script>
+</body>
+</html>
