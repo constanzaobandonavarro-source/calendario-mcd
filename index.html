@@ -121,7 +121,6 @@ RAW.forEach(([f,,a,m]) => {
 const ultimaClase = {};
 for (const a in asigFechas) {
   const fechas = asigFechas[a].sort();
-  // Se reemplazó el .at(-1) por compatibilidad con todos los navegadores
   ultimaClase[a] = fechas[fechas.length - 1]; 
 }
 
@@ -146,7 +145,7 @@ function calcularViaje(fecha, dia, asig, modal, viajaVal) {
 }
 
 const clasesPorFecha = {};
-// Ahora extraemos las 6 columnas completas (agregando viajaVal)
+// Ahora extraemos las 6 columnas completas
 RAW.forEach(([f,dia,asig,modal,viajaVal,notas]) => {
   clasesPorFecha[f] = { dia, asig, modal:modal.toUpperCase(), notas, ...calcularViaje(f,dia,asig,modal,viajaVal) };
 });
@@ -238,4 +237,65 @@ function showTip(e, fecha, clase, asigInfo) {
     ? `<span class="tooltip-viaja" style="background:${asigInfo.color}33;color:${asigInfo.color}">✈ VIAJA</span>`
     : clase.tipo==="noaplica"
       ? `<span class="tooltip-viaja" style="background:#333;color:#666">— NO APLICA</span>`
-      : `<span class="tooltip-viaja" style="background:#
+      : `<span class="tooltip-viaja" style="background:#1a2e1f;color:#4fc993">✓ NO VIAJA</span>`;
+  tooltip.innerHTML = `
+    <div class="tooltip-date">${fecha} · ${clase.dia.toUpperCase()}</div>
+    <div class="tooltip-asig" style="color:${asigInfo.color}">${clase.asig}</div>
+    <div style="font-size:0.7rem;color:var(--text-muted)">${labels[clase.modal]||clase.modal}</div>
+    ${viajaHtml}
+    ${clase.alerta?`<div class="tooltip-alert">${clase.alerta}</div>`:""}
+    ${clase.notas?`<div style="font-size:0.63rem;color:#6b7390;margin-top:4px">${clase.notas}</div>`:""}`;
+  tooltip.classList.add("visible");
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  tooltip.style.left = Math.min(e.clientX+14, window.innerWidth-245)+"px";
+  tooltip.style.top  = Math.min(e.clientY+14, window.innerHeight-170)+"px";
+}
+function hideTip() { tooltip.classList.remove("visible"); }
+
+// Render
+const root = document.getElementById("calendarRoot");
+BIMESTRES.forEach(bim => {
+  const block = document.createElement("div");
+  block.className = "bimestre-block";
+  const lbl = document.createElement("div");
+  lbl.className = "bimestre-label"; lbl.textContent = bim.label;
+  block.appendChild(lbl);
+
+  const row = document.createElement("div");
+  row.className = "bimestre-row";
+
+  const wrap = document.createElement("div");
+  wrap.className = "months-wrap";
+  const seen = new Set();
+  // Asignaturas de este bimestre
+  const bimAsigs = [...new Set(RAW
+    .filter(([f]) => bim.meses.some(([y,m])=>f.startsWith(`${y}-${pad(m)}`)))
+    .map(([,,a])=>a))];
+
+  bim.meses.forEach(([y,m]) => {
+    const k=`${y}-${m}`;
+    if(!seen.has(k)){ seen.add(k); wrap.appendChild(buildMonth(y,m)); }
+  });
+  row.appendChild(wrap);
+  row.appendChild(buildLegend(bimAsigs));
+  block.appendChild(row);
+  root.appendChild(block);
+});
+
+// Stats actualizados
+const totalViajes = RAW.filter(([f,d,a,m,v])=>calcularViaje(f,d,a,m,v).viaja).length;
+const viernes = RAW.filter(([f,d,a,m,v])=>calcularViaje(f,d,a,m,v).viaja&&d==="viernes").length;
+const sabados = RAW.filter(([f,d,a,m,v])=>calcularViaje(f,d,a,m,v).viaja&&d==="sábado").length;
+const aloj = RAW.filter(([f,d,a,m,v])=>calcularViaje(f,d,a,m,v).viaja&&d==="viernes"&&m==="PRESENCIAL").length;
+const statsBar = document.getElementById("statsBar");
+[["✈️",totalViajes,"pasajes a comprar"],["📅",viernes,"viernes (permiso)"],["🗓",sabados,"sábados"],["🏨",aloj,"noches alojamiento"]]
+  .forEach(([icon,num,label])=>{
+    const p=document.createElement("div"); p.className="stat-pill";
+    p.innerHTML=`<span>${icon}</span><span class="stat-num">${num}</span><span class="stat-label">${label}</span>`;
+    statsBar.appendChild(p);
+  });
+</script>
+</body>
+</html>
