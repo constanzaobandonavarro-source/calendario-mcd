@@ -289,25 +289,36 @@ function renderDashboard() {
   const diaNum = proxClase[0].split('-')[2];
   const modalText = proxClase[3].toLowerCase();
 
-  // Buscar próximo viaje (donde calcularViaje.viaja === true)
+  // Buscar próximo viaje
   const proxViajeRaw = clasesFuturas.find(r => calcularViaje(r[0], r[1], r[2], r[3], r[4]).viaja);
   const proxViajeText = proxViajeRaw ? `Próximo viaje: ${proxViajeRaw[0]}` : "";
-
-  // Determinar en qué bimestre estamos (o el siguiente más próximo)
-  const currentBim = BIMESTRES.find(b => b.meses.some(([y,m]) => strHoy.startsWith(`${y}-${pad(m)}`))) || BIMESTRES[0];
-  
-  // Fechas finales para cálculos de semanas
-  const clasesBimestre = RAW.filter(r => currentBim.meses.some(([y,m]) => r[0].startsWith(`${y}-${pad(m)}`)) && !["FESTIVO","SUSPENSIÓN"].includes(r[3].toUpperCase()));
-  const finTrimestreStr = clasesBimestre.length > 0 ? clasesBimestre.sort().pop()[0] : strHoy;
-  
-  const finAnioStr = RAW.filter(r => r[0].startsWith("2026") && !["FESTIVO","SUSPENSIÓN"].includes(r[3].toUpperCase())).sort((a,b) => a[0].localeCompare(b[0])).pop()[0];
-  const finMagisterStr = RAW.filter(r => !["FESTIVO","SUSPENSIÓN"].includes(r[3].toUpperCase())).sort((a,b) => a[0].localeCompare(b[0])).pop()[0];
 
   function getSemanas(endStr) {
     const parts = endStr.split('-');
     const endDate = new Date(parts[0], parts[1]-1, parts[2]);
     const diff = endDate - now;
     return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24 * 7)) : 0;
+  }
+
+  // 1. Detectar las asignaturas que estás cursando ahora mismo
+  // Tomamos las primeras 2 asignaturas únicas que aparecen en tu calendario futuro
+  const asignaturasActivas = [...new Set(clasesFuturas.map(r => r[2]))].slice(0, 2);
+  
+  // 2. Construir el texto dinámico con las semanas restantes de cada una
+  const textosSemanas = asignaturasActivas.map(asig => {
+    const finAsigStr = ultimaClase[asig];
+    const semanas = getSemanas(finAsigStr);
+    // Formatear el texto para que se vea limpio (ej: "INTELIGENCIA MATERIAL" -> "Inteligencia Material")
+    const nombreBonito = asig.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+    return `<span>${semanas}</span> para terminar ${nombreBonito}`;
+  });
+
+  let textoFinal = "";
+  if (textosSemanas.length === 1) {
+      textoFinal = `Quedan ${textosSemanas[0]}`;
+  } else if (textosSemanas.length > 1) {
+      const ultimo = textosSemanas.pop();
+      textoFinal = `Quedan ${textosSemanas.join(", ")} y ${ultimo}`;
   }
 
   const panel = document.getElementById("dashboardPanel");
@@ -318,16 +329,10 @@ function renderDashboard() {
       <span class="highlight" style="text-transform: capitalize;">${modalText}</span>
     </div>
     <div class="dash-stats">
-      Quedan <span>${getSemanas(finTrimestreStr)}</span> semanas para terminar el trimestre, 
-      <span>${getSemanas(finAnioStr)}</span> para terminar el año y 
-      <span>${getSemanas(finMagisterStr)}</span> para terminar el magíster.
+      ${textoFinal}.
     </div>
     ${proxViajeText ? `<div class="dash-subtle">${proxViajeText}</div>` : ''}
   `;
 }
 
 renderDashboard();
-
-</script>
-</body>
-</html>
